@@ -1,0 +1,13 @@
+spring:
+
+  datasource:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${DB_ADDRESS}:3306/concurcoupon?autoReconnect=true&useSSL=false
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+#  jpa:
+#    hibernate:
+#      ddl-auto: validate
+
+server:
+  port: 8080
