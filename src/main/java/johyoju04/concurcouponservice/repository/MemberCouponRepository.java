@@ -5,5 +5,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface MemberCouponRepository extends JpaRepository<MemberCoupon,Long> {
+public interface MemberCouponRepository extends JpaRepository<MemberCoupon, Long> {
+    int countByMemberIdAndCouponGroupId(Long memberId, Long couponGroupId);
+
+    Long countByCouponGroupId(Long couponGroupId);
 }
