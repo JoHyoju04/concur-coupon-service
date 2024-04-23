@@ -1,25 +1,26 @@
 package johyoju04.concurcouponservice.model.entity;
 
 import jakarta.persistence.*;
+import johyoju04.concurcouponservice.common.exception.BadRequestException;
+import johyoju04.concurcouponservice.common.exception.ErrorCode;
 import johyoju04.concurcouponservice.model.mappedenum.DiscountType;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 @Getter
+@Builder
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 @Table(name = "coupon")
-public class Coupon extends AbstractTimeEntity{
+public class Coupon extends AbstractTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch= FetchType.LAZY)
-    @JoinColumn(name="coupon_group_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "coupon_group_id")
     CouponGroup couponGroup;
 
     private DiscountType discountType;
@@ -28,7 +29,7 @@ public class Coupon extends AbstractTimeEntity{
     private BigDecimal fixedDiscountAmount;
 
     //정률 할인률 (정률쿠폰, 단위 : %)
-    private BigDecimal percentDiscountRate;
+    private BigDecimal percentageDiscountRate;
 
     //최소 구매 금액
     private BigDecimal minPurchaseAmount;
@@ -41,4 +42,11 @@ public class Coupon extends AbstractTimeEntity{
     private Integer initialQuantity;
 
     private Integer remainQuantity;
+
+    public void decreaseRemainQuantity() {
+        if (remainQuantity <= 0) {
+            throw new BadRequestException(ErrorCode.COUPON_OVER_AMOUNT);
+        }
+        remainQuantity--;
+    }
 }

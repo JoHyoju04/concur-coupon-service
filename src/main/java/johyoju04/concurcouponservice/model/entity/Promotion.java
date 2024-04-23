@@ -2,18 +2,18 @@ package johyoju04.concurcouponservice.model.entity;
 
 import jakarta.persistence.*;
 import johyoju04.concurcouponservice.model.mappedenum.MallType;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.List;
+
 
 @Getter
+@Builder
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 @Table(name = "promotion")
-public class Promotion extends AbstractTimeEntity{
+public class Promotion extends AbstractTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
