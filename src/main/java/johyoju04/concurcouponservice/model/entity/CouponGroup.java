@@ -39,7 +39,7 @@ public class CouponGroup extends AbstractTimeEntity {
     private Boolean isIssued;
 
     public void validateIssuedDate(LocalDateTime now) {
-        if (!(issuedStartedAt.isBefore(now) && issuedFinishedAt.isAfter(now))) {
+        if (!(issuedStartedAt.isBefore(now) && issuedFinishedAt.isAfter(now)) && !issuedStartedAt.isEqual(now)) {
             throw new BadRequestException(ErrorCode.NOT_ISSUED_TIME);
         }
     }
