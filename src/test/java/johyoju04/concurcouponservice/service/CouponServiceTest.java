@@ -1,5 +1,6 @@
 package johyoju04.concurcouponservice.service;
 
+import jakarta.transaction.Transactional;
 import johyoju04.concurcouponservice.common.exception.BadRequestException;
 import johyoju04.concurcouponservice.common.exception.ErrorCode;
 import johyoju04.concurcouponservice.common.exception.NotFoundException;
@@ -25,6 +26,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@Transactional
 @SpringBootTest
 public class CouponServiceTest {
     private final CouponService couponService;
@@ -71,6 +73,8 @@ public class CouponServiceTest {
                 .promotion(promotion)
                 .issuedStartedAt(now)
                 .issuedFinishedAt(now.plusDays(7))
+                .usageStartedAt(now)
+                .usageFinishedAt(now.plusDays(30))
                 .isIssued(true)
                 .isRandom(false)
                 .build();
@@ -118,13 +122,25 @@ public class CouponServiceTest {
     }
 
     @Test
-    void 쿠폰그룹_발급불가능날짜() {
+    void 쿠폰그룹_발급_불가능_날짜() {
         CouponGroup couponGroup = couponGroupRepository.findById(1L).get();
         couponGroup.updateIssuedDate(LocalDateTime.now().minusDays(7), LocalDateTime.now().minusDays(3));
+
         //테스트 코드 내에서 Dirty check 안된다.
         couponGroupRepository.save(couponGroup);
         assertThatThrownBy(() -> couponService.issueMemberCoupon(couponGroup.getId(), 1L))
                 .isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void 쿠폰그룹_발급_가능_날짜() {
+        CouponGroup couponGroup = couponGroupRepository.findById(1L).get();
+        LocalDateTime now = LocalDateTime.of(2024, 12, 01, 14, 00);
+        couponGroup.updateIssuedDate(now, now.plusDays(3));
+
+        //테스트 코드 내에서 Dirty check 안된다.
+        couponGroupRepository.save(couponGroup);
+        couponService.issueMemberCoupon(couponGroup.getId(), 1L);
     }
 
     @Test
