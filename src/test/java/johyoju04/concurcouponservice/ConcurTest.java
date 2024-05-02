@@ -17,11 +17,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Transactional
+//@Transactional
 @SpringBootTest
 public class ConcurTest {
     private final CouponService couponService;
@@ -122,6 +125,51 @@ public class ConcurTest {
         Long memberCouponCnt = memberCouponRepository.countByCouponGroupId(1L);
         assertThat(memberCouponCnt)
                 .isEqualTo(Math.min(memberCount, 30));
+    }
 
+    @Test
+    void 쿠폰_동시_발급() throws InterruptedException {
+        // given
+        int memberCount = 50;
+        int couponAmount = 30;
+        CouponGroup couponGroup = couponGroupRepository.findById(1L).get();
+
+        ExecutorService executorService = Executors.newFixedThreadPool(50);
+        CountDownLatch latch = new CountDownLatch(memberCount);
+
+        AtomicInteger successCount = new AtomicInteger();
+        AtomicInteger failCount = new AtomicInteger();
+
+        // when
+        for (int i = 0; i < memberCount; i++) {
+            executorService.submit(() -> {
+                try {
+                    Member member = Member.builder()
+                            .email("test" + "@email.com")
+                            .password("123")
+                            .build();
+
+                    memberRepository.save(member);
+
+                    couponService.issueMemberCoupon(couponGroup.getId(),member.getId());
+                    successCount.incrementAndGet();
+                } catch (Exception e) {
+                    System.out.println(e.getMessage());
+                    failCount.incrementAndGet();
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+
+        System.out.println("successCount = " + successCount);
+        System.out.println("failCount = " + failCount);
+
+        // then
+        Long memberCouponCnt = memberCouponRepository.countByCouponGroupId(1L);
+        assertThat(memberCouponCnt)
+                .isEqualTo(Math.min(memberCount, couponAmount));
     }
 }
