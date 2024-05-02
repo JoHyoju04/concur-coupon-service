@@ -51,7 +51,7 @@ public class CouponService {
 
         //쿠폰의 잔여수량 조회
         //랜덤이 아닐 경우
-        Coupon coupon = couponRepository.findByCouponGroupId(couponGroupId)
+        Coupon coupon = couponRepository.findByIdForUpdate(couponGroupId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.COUPON_NOT_FOUND));
 
         coupon.decreaseRemainQuantity();
