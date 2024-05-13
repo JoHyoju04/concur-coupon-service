@@ -107,7 +107,7 @@ public class CouponServiceTest {
     void 회원이_아닌_멤버_쿠폰_발급() {
         Optional<CouponGroup> couponGroup = couponGroupRepository.findById(1L);
         assertThatThrownBy(() -> couponService.issueMemberCoupon(couponGroup.get().getId(), 2L))
-                .isInstanceOf(NotFoundException.class);
+                .hasMessage(ErrorCode.MEMBER_NOT_FOUND.getMessage());
     }
 
     @Test
@@ -117,7 +117,7 @@ public class CouponServiceTest {
         //테스트 코드 내에서 Dirty check 안된다.
         couponGroupRepository.save(couponGroup);
         assertThatThrownBy(() -> couponService.issueMemberCoupon(couponGroup.getId(), 1L))
-                .isInstanceOf(BadRequestException.class);
+                .hasMessage(ErrorCode.COUPON_OVER_AMOUNT.getMessage());
 
     }
 
@@ -129,7 +129,7 @@ public class CouponServiceTest {
         //테스트 코드 내에서 Dirty check 안된다.
         couponGroupRepository.save(couponGroup);
         assertThatThrownBy(() -> couponService.issueMemberCoupon(couponGroup.getId(), 1L))
-                .isInstanceOf(BadRequestException.class);
+                .hasMessage(ErrorCode.NOT_ISSUED_TIME.getMessage());
     }
 
     @Test
