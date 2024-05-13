@@ -164,6 +164,25 @@ public class CouponServiceTest {
 
     @Test
     void 쿠폰_수량초과() {
+        CouponGroup couponGroup = couponGroupRepository.findById(1L).get();
+        Coupon coupon = couponRepository.findById(1L).get();
 
+        Integer remainQuantity = 0;
+        Coupon updateCoupon = Coupon.builder()
+                .id(coupon.getId())
+                .couponGroup(couponGroup)
+                .discountType(coupon.getDiscountType())
+                .name(coupon.getName())
+                .initialQuantity(coupon.getInitialQuantity())
+                .remainQuantity(remainQuantity)
+                .maxDiscountAmount(coupon.getMaxDiscountAmount())
+                .percentageDiscountRate(coupon.getPercentageDiscountRate())
+                .minPurchaseAmount(coupon.getMinPurchaseAmount())
+                .build();
+
+        couponRepository.save(updateCoupon);
+
+        assertThatThrownBy(() -> couponService.issueMemberCoupon(couponGroup.getId(), 1L))
+                .hasMessage(ErrorCode.COUPON_OVER_AMOUNT.getMessage());
     }
 }
