@@ -38,12 +38,6 @@ public class CouponGroup extends AbstractTimeEntity {
 
     private Boolean isIssued;
 
-    public void validateIssuedDate(LocalDateTime now) {
-        if (!(issuedStartedAt.isBefore(now) && issuedFinishedAt.isAfter(now)) && !issuedStartedAt.isEqual(now)) {
-            throw new BadRequestException(ErrorCode.NOT_ISSUED_TIME);
-        }
-    }
-
     public void updateIsIssued(Boolean isIssued) {
         if (isIssued == null) {
             throw new BadRequestException(ErrorCode.INVALID_REQUEST_ARGUMENT);
@@ -57,6 +51,20 @@ public class CouponGroup extends AbstractTimeEntity {
         }
         this.issuedStartedAt = issuedStartedAt;
         this.issuedFinishedAt = issuedFinishedAt;
+    }
+
+    public void validateIssue(LocalDateTime now){
+        if(!this.isIssued){
+            throw new BadRequestException(ErrorCode.COUPON_OVER_AMOUNT);
+        }
+
+        validateIssuedDate(now);
+    }
+
+    private void validateIssuedDate(LocalDateTime now) {
+        if (!(issuedStartedAt.isBefore(now) && issuedFinishedAt.isAfter(now)) && !issuedStartedAt.isEqual(now)) {
+            throw new BadRequestException(ErrorCode.NOT_ISSUED_TIME);
+        }
     }
 
 }

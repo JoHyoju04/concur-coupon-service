@@ -34,13 +34,7 @@ public class CouponService {
         Member member = findMemberById(memberId);
         LocalDateTime now = LocalDateTime.now();
 
-        //발행가능한지 여부
-        if (!couponGroup.getIsIssued()) {
-            throw new BadRequestException(ErrorCode.COUPON_OVER_AMOUNT);
-        }
-
-        //발행가능한 날짜인지
-        couponGroup.validateIssuedDate(now);
+        couponGroup.validateIssue(now);
 
         //member가 쿠폰 발급받은지 확인하기
         int memberCouponCount = memberCouponRepository.countByMemberIdAndCouponGroupId(memberId, couponGroupId);

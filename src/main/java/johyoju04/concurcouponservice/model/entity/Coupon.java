@@ -44,7 +44,7 @@ public class Coupon extends AbstractTimeEntity {
     private Integer remainQuantity;
 
     public void decreaseRemainQuantity() {
-        if (remainQuantity <= 0) {
+        if (this.remainQuantity <= 0) {
             throw new BadRequestException(ErrorCode.COUPON_OVER_AMOUNT);
         }
         remainQuantity--;
