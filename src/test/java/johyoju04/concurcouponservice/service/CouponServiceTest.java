@@ -1,20 +1,14 @@
 package johyoju04.concurcouponservice.service;
 
 import jakarta.transaction.Transactional;
-import johyoju04.concurcouponservice.common.exception.BadRequestException;
 import johyoju04.concurcouponservice.common.exception.ErrorCode;
 import johyoju04.concurcouponservice.common.exception.NotFoundException;
-import johyoju04.concurcouponservice.model.entity.Coupon;
-import johyoju04.concurcouponservice.model.entity.CouponGroup;
-import johyoju04.concurcouponservice.model.entity.Member;
-import johyoju04.concurcouponservice.model.entity.Promotion;
+import johyoju04.concurcouponservice.model.entity.*;
 import johyoju04.concurcouponservice.model.mappedenum.DiscountType;
 import johyoju04.concurcouponservice.model.mappedenum.ExclusiveType;
 import johyoju04.concurcouponservice.model.mappedenum.MallType;
-import johyoju04.concurcouponservice.repository.CouponGroupRepository;
-import johyoju04.concurcouponservice.repository.CouponRepository;
-import johyoju04.concurcouponservice.repository.MemberRepository;
-import johyoju04.concurcouponservice.repository.PromotionRepository;
+import johyoju04.concurcouponservice.model.mappedenum.MemberCouponState;
+import johyoju04.concurcouponservice.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,15 +28,18 @@ public class CouponServiceTest {
     private final PromotionRepository promotionRepository;
     private final CouponGroupRepository couponGroupRepository;
     private final CouponRepository couponRepository;
+    private final MemberCouponRepository memberCouponRepository;
 
     @Autowired
     public CouponServiceTest(CouponService couponService, MemberRepository memberRepository
-            , PromotionRepository promotionRepository, CouponGroupRepository couponGroupRepository, CouponRepository couponRepository) {
+            , PromotionRepository promotionRepository, CouponGroupRepository couponGroupRepository
+            , CouponRepository couponRepository, MemberCouponRepository memberCouponRepository) {
         this.couponService = couponService;
         this.memberRepository = memberRepository;
         this.promotionRepository = promotionRepository;
         this.couponGroupRepository = couponGroupRepository;
         this.couponRepository = couponRepository;
+        this.memberCouponRepository = memberCouponRepository;
     }
 
     @BeforeEach
@@ -146,6 +143,23 @@ public class CouponServiceTest {
     @Test
     void 멤버가_이미_쿠폰발급() {
 
+        CouponGroup couponGroup = couponGroupRepository.findById(1L).get();
+        Coupon coupon = couponRepository.findById(1L).get();
+        Member member = memberRepository.findById(1L).get();
+        LocalDateTime now = LocalDateTime.now();
+
+        MemberCoupon memberCoupon = MemberCoupon.builder()
+                .coupon(coupon)
+                .couponGroup(couponGroup)
+                .member(member)
+                .issuedAt(now)
+                .state(MemberCouponState.BEFORE_USAGE)
+                .build();
+
+        memberCouponRepository.save(memberCoupon);
+
+        assertThatThrownBy(() -> couponService.issueMemberCoupon(couponGroup.getId(), member.getId()))
+                .hasMessage(ErrorCode.COUPON_OVER_AMOUNT_PER_MEMBER.getMessage());
     }
 
     @Test
