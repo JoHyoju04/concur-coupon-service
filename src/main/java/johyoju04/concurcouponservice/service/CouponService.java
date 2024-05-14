@@ -36,18 +36,11 @@ public class CouponService {
 
         couponGroup.validateIssue(now);
 
-        //member가 쿠폰 발급받은지 확인하기
-        int memberCouponCount = memberCouponRepository.countByMemberIdAndCouponGroupId(memberId, couponGroupId);
+        validateAlreadyIssued(memberId, couponGroupId);
 
-        if (memberCouponCount > 0) {
-            throw new BadRequestException(ErrorCode.COUPON_OVER_AMOUNT_PER_MEMBER);
-        }
-
-        //쿠폰의 잔여수량 조회
+        //쿠폰의 잔여수량 감소
         //랜덤이 아닐 경우
-        Coupon coupon = couponRepository.findByIdForUpdate(couponGroupId)
-                .orElseThrow(() -> new NotFoundException(ErrorCode.COUPON_NOT_FOUND));
-
+        Coupon coupon = findCouponByCouponGroupId(couponGroupId);
         coupon.decreaseRemainQuantity();
 
         MemberCoupon memberCoupon = MemberCoupon.builder()
@@ -69,5 +62,18 @@ public class CouponService {
     private Member findMemberById(Long memberId) {
         return memberRepository.findById(memberId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.MEMBER_NOT_FOUND));
+    }
+
+    private void validateAlreadyIssued(Long memberId, Long couponGroupId) {
+        //member가 쿠폰 발급받은지 확인하기
+        if (memberCouponRepository.existsByMemberIdAndCouponGroupId(memberId, couponGroupId)) {
+            throw new BadRequestException(ErrorCode.COUPON_OVER_AMOUNT_PER_MEMBER);
+        }
+
+    }
+
+    private Coupon findCouponByCouponGroupId(Long couponGroupId) {
+        return couponRepository.findByCouponGroupIdForUpdate(couponGroupId)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.COUPON_NOT_FOUND));
     }
 }
