@@ -16,6 +16,7 @@ import johyoju04.concurcouponservice.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 
 @Service
@@ -26,13 +27,14 @@ public class CouponService {
     private final CouponGroupRepository couponGroupRepository;
     private final CouponRepository couponRepository;
     private final MemberRepository memberRepository;
+    private final Clock clock;
 
     @Transactional
     public void issueMemberCoupon(Long couponGroupId, Long memberId) {
         //쿠폰 그룹의 발급 가능여부 조회
         CouponGroup couponGroup = findCouponGroupById(couponGroupId);
         Member member = findMemberById(memberId);
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(clock);
 
         couponGroup.validateIssue(now);
 
