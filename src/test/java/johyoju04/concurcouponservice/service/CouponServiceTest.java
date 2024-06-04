@@ -13,12 +13,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doReturn;
 
 @Transactional
 @SpringBootTest
@@ -29,6 +34,10 @@ public class CouponServiceTest {
     private final CouponGroupRepository couponGroupRepository;
     private final CouponRepository couponRepository;
     private final MemberCouponRepository memberCouponRepository;
+    private static final LocalDateTime starndardLocalDateTime = LocalDateTime.of(2024, 1, 1, 0, 0);
+    private static final Clock NOW_CLOCK = Clock.fixed(Instant.parse("2024-01-02T10:00:00Z"), ZoneOffset.UTC);
+    @SpyBean
+    private Clock clock;
 
     @Autowired
     public CouponServiceTest(CouponService couponService, MemberRepository memberRepository
@@ -44,7 +53,6 @@ public class CouponServiceTest {
 
     @BeforeEach
     void 초기데이터_생성() {
-        LocalDateTime now = LocalDateTime.now();
         Member member = Member.builder()
                 .email("test@email.com")
                 .password("123")
@@ -57,8 +65,8 @@ public class CouponServiceTest {
                 .mainImageUrl("test main image")
                 .description("test description")
                 .name("test promotion")
-                .finishedAt(now.plusDays(1))
-                .startedAt(now)
+                .finishedAt(starndardLocalDateTime.plusDays(7))
+                .startedAt(starndardLocalDateTime)
                 .mallType(MallType.OFFLINE)
                 .isDisplay(true)
                 .build();
@@ -68,10 +76,10 @@ public class CouponServiceTest {
         CouponGroup couponGroup = CouponGroup.builder()
                 .exclusiveType(ExclusiveType.APP)
                 .promotion(promotion)
-                .issuedStartedAt(now)
-                .issuedFinishedAt(now.plusDays(7))
-                .usageStartedAt(now)
-                .usageFinishedAt(now.plusDays(30))
+                .issuedStartedAt(starndardLocalDateTime)
+                .issuedFinishedAt(starndardLocalDateTime.plusDays(7))
+                .usageStartedAt(starndardLocalDateTime)
+                .usageFinishedAt(starndardLocalDateTime.plusDays(30))
                 .isIssued(true)
                 .isRandom(false)
                 .build();
@@ -91,6 +99,10 @@ public class CouponServiceTest {
 
         couponRepository.save(coupon);
 
+        doReturn(Instant.now(NOW_CLOCK))
+                .when(clock)
+                .instant();
+
     }
 
     @Test
@@ -108,51 +120,51 @@ public class CouponServiceTest {
     }
 
     @Test
-    void 쿠폰그룹_수량초과로_발급불가능() {
+    void 수량초과로_발급불가능한_쿠폰그룹() {
         CouponGroup couponGroup = couponGroupRepository.findById(1L).get();
         couponGroup.updateIsIssued(false);
         //테스트 코드 내에서 Dirty check 안된다.
         couponGroupRepository.save(couponGroup);
+
         assertThatThrownBy(() -> couponService.issueMemberCoupon(couponGroup.getId(), 1L))
                 .hasMessage(ErrorCode.COUPON_OVER_AMOUNT.getMessage());
 
     }
 
     @Test
-    void 쿠폰그룹_발급_불가능_날짜() {
+    void 발급_불가능한_날짜인_쿠폰그룹() {
         CouponGroup couponGroup = couponGroupRepository.findById(1L).get();
-        couponGroup.updateIssuedDate(LocalDateTime.now().minusDays(7), LocalDateTime.now().minusDays(3));
 
-        //테스트 코드 내에서 Dirty check 안된다.
-        couponGroupRepository.save(couponGroup);
-        assertThatThrownBy(() -> couponService.issueMemberCoupon(couponGroup.getId(), 1L))
+        assertThatThrownBy(() -> couponGroup.validateIssue(starndardLocalDateTime.minusDays(1)))
                 .hasMessage(ErrorCode.NOT_ISSUED_TIME.getMessage());
     }
 
     @Test
-    void 쿠폰그룹_발급_가능_날짜() {
+    void 발급_가능한_날짜인_쿠폰그룹() {
         CouponGroup couponGroup = couponGroupRepository.findById(1L).get();
-        LocalDateTime now = LocalDateTime.of(2024, 12, 01, 14, 00);
-        couponGroup.updateIssuedDate(now, now.plusDays(3));
+        LocalDateTime originIssuedStartedAt = couponGroup.getIssuedStartedAt();
+        couponGroup.updateIssuedDate(originIssuedStartedAt.plusDays(1), originIssuedStartedAt.plusDays(2));
+
+        couponGroupRepository.save(couponGroup);
 
         //테스트 코드 내에서 Dirty check 안된다.
         couponGroupRepository.save(couponGroup);
+
         couponService.issueMemberCoupon(couponGroup.getId(), 1L);
     }
 
     @Test
     void 멤버가_이미_쿠폰발급() {
-
         CouponGroup couponGroup = couponGroupRepository.findById(1L).get();
         Coupon coupon = couponRepository.findById(1L).get();
         Member member = memberRepository.findById(1L).get();
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime issuedDate = starndardLocalDateTime.plusDays(1);
 
         MemberCoupon memberCoupon = MemberCoupon.builder()
                 .coupon(coupon)
                 .couponGroup(couponGroup)
                 .member(member)
-                .issuedAt(now)
+                .issuedAt(issuedDate)
                 .state(MemberCouponState.BEFORE_USAGE)
                 .build();
 
